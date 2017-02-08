@@ -9,10 +9,12 @@ export class SpriteText2D extends Text2D{
     return this.sprite.raycast.apply(this.sprite, arguments)
   }
 
-  updateText() {
+  updateText(isSimpleUpdate: boolean) {
     this.canvas.drawText(this._text, {
       font: this._font,
-      fillStyle: this._fillStyle
+      fillStyle: this._fillStyle,
+	  backgroundColor: this._backgroundColor,
+	  paddingX: this._paddingX
     })
 
     // cleanup previous texture
@@ -28,6 +30,9 @@ export class SpriteText2D extends Text2D{
     } else {
       this.material.map = this.texture
     }
+	
+	// Some text updates do not impact geometry. Don't take a performance hit if not necessary.
+	if (isSimpleUpdate) return;
 
     if (!this.sprite) {
       this.sprite = new THREE.Sprite( this.material )

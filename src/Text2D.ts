@@ -9,6 +9,8 @@ export interface TextOptions {
   align?: THREE.Vector2;
   side?: number;
   antialias?: boolean;
+  backgroundColor?: string;
+  paddingX?: number;
 }
 
 export abstract class Text2D extends THREE.Object3D {
@@ -22,6 +24,8 @@ export abstract class Text2D extends THREE.Object3D {
   protected _font: string;
   protected _fillStyle: string;
   protected _text: string;
+  protected _backgroundColor: string;
+  protected _paddingX: number;
 
   protected canvas: CanvasText;
   protected geometry: THREE.Geometry | THREE.BufferGeometry;
@@ -31,6 +35,8 @@ export abstract class Text2D extends THREE.Object3D {
 
     this._font = options.font || '30px Arial';
     this._fillStyle = options.fillStyle || '#FFFFFF';
+	this._backgroundColor = options.backgroundColor || '';
+	this._paddingX = options.paddingX || 0;
 
     this.canvas = new CanvasText()
 
@@ -43,7 +49,7 @@ export abstract class Text2D extends THREE.Object3D {
   }
 
   abstract raycast(): void;
-  abstract updateText(): void;
+  abstract updateText(isSimpleUpdate: boolean): void;
 
   get width () { return this.canvas.textWidth }
   get height () { return this.canvas.textHeight }
@@ -52,7 +58,7 @@ export abstract class Text2D extends THREE.Object3D {
   set text(value) {
     if (this._text !== value) {
       this._text = value;
-      this.updateText();
+      this.updateText(false);
     }
   }
 
@@ -60,7 +66,7 @@ export abstract class Text2D extends THREE.Object3D {
   set font(value) {
     if (this._font !== value) {
       this._font = value;
-      this.updateText();
+      this.updateText(false);
     }
   }
 
@@ -71,7 +77,18 @@ export abstract class Text2D extends THREE.Object3D {
   set fillStyle(value) {
     if (this._fillStyle !== value) {
       this._fillStyle = value;
-      this.updateText();
+      this.updateText(false);
+    }
+  }
+  
+  get backgroundColor() {
+    return this._backgroundColor;
+  }
+
+  set backgroundColor(value) {
+    if (this._backgroundColor !== value) {
+      this._backgroundColor = value;
+      this.updateText(true);
     }
   }
 

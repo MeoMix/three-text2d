@@ -30,15 +30,21 @@ export class CanvasText {
     this.textWidth = Math.ceil(this.ctx.measureText(text).width)
     this.textHeight = getFontHeight(this.ctx.font)
 
-    this.canvas.width = THREE.Math.nextPowerOfTwo(this.textWidth)
+    this.canvas.width = THREE.Math.nextPowerOfTwo(this.textWidth  + ctxOptions.paddingX)
     this.canvas.height = THREE.Math.nextPowerOfTwo(this.textHeight)
-
+	
+	if (ctxOptions.backgroundColor) {
+		this.ctx.fillStyle = ctxOptions.fillStyle
+		this.ctx.fillStyle = ctxOptions.backgroundColor
+		this.ctx.fillRect(0, 0, this.textWidth + (ctxOptions.paddingX * 2), this.textHeight)
+	}
+	
     this.ctx.font = ctxOptions.font
     this.ctx.fillStyle = ctxOptions.fillStyle
     this.ctx.textAlign = 'left';
     this.ctx.textBaseline = 'top';
 
-    this.ctx.fillText(text, 0, 0);
+    this.ctx.fillText(text, ctxOptions.paddingX, 0);
 
     return this.canvas
   }

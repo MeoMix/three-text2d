@@ -68,13 +68,13 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 module.exports = THREE;
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -107,9 +107,9 @@ function getFontHeight(fontStyle) {
 exports.getFontHeight = getFontHeight;
 
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -129,6 +129,8 @@ var Text2D = (function (_super) {
         var _this = _super.call(this) || this;
         _this._font = options.font || '30px Arial';
         _this._fillStyle = options.fillStyle || '#FFFFFF';
+        _this._backgroundColor = options.backgroundColor || '';
+        _this._paddingX = options.paddingX || 0;
         _this.canvas = new CanvasText_1.CanvasText();
         _this.align = options.align || utils_1.textAlign.center;
         _this.side = options.side || THREE.DoubleSide;
@@ -152,7 +154,7 @@ var Text2D = (function (_super) {
         set: function (value) {
             if (this._text !== value) {
                 this._text = value;
-                this.updateText();
+                this.updateText(false);
             }
         },
         enumerable: true,
@@ -163,7 +165,7 @@ var Text2D = (function (_super) {
         set: function (value) {
             if (this._font !== value) {
                 this._font = value;
-                this.updateText();
+                this.updateText(false);
             }
         },
         enumerable: true,
@@ -176,7 +178,20 @@ var Text2D = (function (_super) {
         set: function (value) {
             if (this._fillStyle !== value) {
                 this._fillStyle = value;
-                this.updateText();
+                this.updateText(false);
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Text2D.prototype, "backgroundColor", {
+        get: function () {
+            return this._backgroundColor;
+        },
+        set: function (value) {
+            if (this._backgroundColor !== value) {
+                this._backgroundColor = value;
+                this.updateText(true);
             }
         },
         enumerable: true,
@@ -198,9 +213,9 @@ var Text2D = (function (_super) {
 exports.Text2D = Text2D;
 
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -221,11 +236,13 @@ var MeshText2D = (function (_super) {
     MeshText2D.prototype.raycast = function () {
         this.mesh.raycast.apply(this.mesh, arguments);
     };
-    MeshText2D.prototype.updateText = function () {
+    MeshText2D.prototype.updateText = function (isSimpleUpdate) {
         this.cleanUp(); // cleanup previous texture
         this.canvas.drawText(this._text, {
             font: this._font,
-            fillStyle: this._fillStyle
+            fillStyle: this._fillStyle,
+            backgroundColor: this._backgroundColor,
+            paddingX: this._paddingX
         });
         this.texture = new THREE.Texture(this.canvas.canvas);
         this.texture.needsUpdate = true;
@@ -237,6 +254,9 @@ var MeshText2D = (function (_super) {
         else {
             this.material.map = this.texture;
         }
+        // Some text updates do not impact geometry. Don't take a performance hit if not necessary.
+        if (isSimpleUpdate)
+            return;
         if (!this.mesh) {
             this.geometry = new THREE.PlaneGeometry(this.canvas.width, this.canvas.height);
             this.mesh = new THREE.Mesh(this.geometry, this.material);
@@ -256,9 +276,9 @@ var MeshText2D = (function (_super) {
 exports.MeshText2D = MeshText2D;
 
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -272,15 +292,17 @@ var Text2D_1 = __webpack_require__(2);
 var SpriteText2D = (function (_super) {
     __extends(SpriteText2D, _super);
     function SpriteText2D() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     SpriteText2D.prototype.raycast = function () {
         return this.sprite.raycast.apply(this.sprite, arguments);
     };
-    SpriteText2D.prototype.updateText = function () {
+    SpriteText2D.prototype.updateText = function (isSimpleUpdate) {
         this.canvas.drawText(this._text, {
             font: this._font,
-            fillStyle: this._fillStyle
+            fillStyle: this._fillStyle,
+            backgroundColor: this._backgroundColor,
+            paddingX: this._paddingX
         });
         // cleanup previous texture
         this.cleanUp();
@@ -293,6 +315,9 @@ var SpriteText2D = (function (_super) {
         else {
             this.material.map = this.texture;
         }
+        // Some text updates do not impact geometry. Don't take a performance hit if not necessary.
+        if (isSimpleUpdate)
+            return;
         if (!this.sprite) {
             this.sprite = new THREE.Sprite(this.material);
             this.geometry = this.sprite.geometry;
@@ -307,9 +332,9 @@ var SpriteText2D = (function (_super) {
 exports.SpriteText2D = SpriteText2D;
 
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -337,13 +362,18 @@ var CanvasText = (function () {
         this.ctx.font = ctxOptions.font;
         this.textWidth = Math.ceil(this.ctx.measureText(text).width);
         this.textHeight = utils_1.getFontHeight(this.ctx.font);
-        this.canvas.width = THREE.Math.nextPowerOfTwo(this.textWidth);
+        this.canvas.width = THREE.Math.nextPowerOfTwo(this.textWidth + ctxOptions.paddingX);
         this.canvas.height = THREE.Math.nextPowerOfTwo(this.textHeight);
+        if (ctxOptions.backgroundColor) {
+            this.ctx.fillStyle = ctxOptions.fillStyle;
+            this.ctx.fillStyle = ctxOptions.backgroundColor;
+            this.ctx.fillRect(0, 0, this.textWidth + (ctxOptions.paddingX * 2), this.textHeight);
+        }
         this.ctx.font = ctxOptions.font;
         this.ctx.fillStyle = ctxOptions.fillStyle;
         this.ctx.textAlign = 'left';
         this.ctx.textBaseline = 'top';
-        this.ctx.fillText(text, 0, 0);
+        this.ctx.fillText(text, ctxOptions.paddingX, 0);
         return this.canvas;
     };
     return CanvasText;
@@ -351,9 +381,9 @@ var CanvasText = (function () {
 exports.CanvasText = CanvasText;
 
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -365,5 +395,5 @@ var utils_1 = __webpack_require__(1);
 exports.textAlign = utils_1.textAlign;
 
 
-/***/ }
+/***/ })
 /******/ ]);
